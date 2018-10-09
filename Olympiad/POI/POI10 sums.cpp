@@ -2,8 +2,11 @@
  *  Author: Jeremy Bouin
  *
  *  Idea:
- *          - For small values, the problem can be solved with an O(n * A) dynamic programming solution.
- *          - For values bigger than a[n], an element is in A' iff the gcd of every a_i divides it.
+ *          - A value x in A' can be written as y + ka₁ where y is a smaller value also in A'. So x is in A' iff
+ *            the minimum value in A' congruent to y modulo a₁ is not greater than x.
+ *          - Build a directed graph with a₁ nodes, where u and v share an edge of weight aᵢ iff u and v are
+ *            congruent to v modulo a₁. Calculate the shortest paths in this graph.
+ *          - A number is in A' iff the distance from 0 to x modulo a₁ is not greater than x.
  */
 
 #include <bits/stdc++.h>
@@ -36,8 +39,7 @@ typedef long long ll;
 using namespace std;
 
 const int N = 5555, A = 55555;
-bool dp[A];
-int a[N];
+int a[N], dist[A];
 int n, k;
 
 signed main() {
@@ -47,25 +49,26 @@ signed main() {
     rep(i, 1, n) {
         cin >> a[i];
     }
-    dp[0] = 1;
-    int g = a[1];
-    rep(i, 1, n) {
-        g = __gcd(g, a[i]);
-        rep(x, a[i], a[n]) {
-            dp[x] |= dp[x - a[i]];
+    fill(dist, dist + A, 2e9);
+    queue<pair<int, int> > q;
+    q.push(make_pair(0, 0));
+    dist[0] = 0;
+    while(sz(q)) {
+        pair<int, int> u = q.front();
+        q.pop();
+        rep(i, 1, n) {
+            pair<int, int> v = make_pair((u.fi + a[i]) % a[1], u.se + a[i]);
+            if(dist[v.fi] > v.se) {
+                dist[v.fi] = v.se;
+                q.push(v);
+            }
         }
     }
     cin >> k;
     while(k--) {
         int x;
         cin >> x;
-        bool ans;
-        if(x <= a[n]) {
-            ans = dp[x];
-        } else {
-            ans = x % g == 0;
-        }
-        cout << (ans ? "TAK" : "NIE") << endl;
+        cout << (dist[x % a[1]] <= x ? "TAK" : "NIE") << endl;
     }
     return 0;
 }
